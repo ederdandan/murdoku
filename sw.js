@@ -1,6 +1,6 @@
 // Service worker do Murdoku.
 // Ao publicar uma nova versão, altere CACHE_VERSION para forçar a atualização do cache.
-const CACHE_VERSION = "murdoku-v2.0.0";
+const CACHE_VERSION = "murdoku-v2.0.1";
 const ASSETS = [
   "./",
   "./index.html",
