@@ -1,0 +1,2502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e1b18" />
+  <meta name="description" content="Murdoku: quebra-cabeça de dedução lógica. Posicione suspeitos e descubra o culpado." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Murdoku" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <title>Murdoku: Dossiê Confidencial</title>
+  <style>
+    :root {
+      --bg: #efe8d8;
+      --bg-pattern: radial-gradient(rgba(30, 27, 24, 0.06) 1px, transparent 0);
+      --surface: #fbf7ee;
+      --surface-2: #f2ead9;
+      --ink: #1e1b18;
+      --muted: #655d52;
+      --accent: #9e2a2b;
+      --accent-soft: rgba(158, 42, 43, 0.12);
+      --accent-2: #1f4e5f;
+      --gold: #b47b19;
+      --ok: #236b43;
+      --warn: #b86b00;
+      --border: rgba(30, 27, 24, 0.16);
+      --grid-line: rgba(30, 27, 24, 0.18);
+      --shadow: 0 10px 28px rgba(30, 27, 24, 0.10);
+      --highlight-line: rgba(180, 123, 25, 0.16);
+      --highlight-cell: rgba(31, 78, 95, 0.20);
+      --room-alpha: 0.17;
+      --radius: 14px;
+    }
+
+    body[data-theme="crime"] {
+      --bg: #0f1722;
+      --bg-pattern: radial-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 0);
+      --surface: #162131;
+      --surface-2: #1d2b40;
+      --ink: #e8f1f8;
+      --muted: #93a7be;
+      --accent: #f43f5e;
+      --accent-soft: rgba(244, 63, 94, 0.16);
+      --accent-2: #0ea5e9;
+      --gold: #facc15;
+      --ok: #34d399;
+      --warn: #fb923c;
+      --border: rgba(148, 163, 184, 0.22);
+      --grid-line: rgba(148, 163, 184, 0.22);
+      --shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+      --highlight-line: rgba(56, 189, 248, 0.12);
+      --highlight-cell: rgba(250, 204, 21, 0.18);
+      --room-alpha: 0.22;
+    }
+
+    body[data-theme="gazeta"] {
+      --bg: #e6dcc8;
+      --bg-pattern: repeating-linear-gradient(0deg, rgba(42, 33, 24, 0.03) 0px, rgba(42, 33, 24, 0.03) 1px, transparent 1px, transparent 4px);
+      --surface: #f5efe2;
+      --surface-2: #e9e0ce;
+      --ink: #241d15;
+      --muted: #6c5f50;
+      --accent: #7c2d12;
+      --accent-soft: rgba(124, 45, 18, 0.13);
+      --accent-2: #3f362c;
+      --gold: #854d0e;
+      --ok: #2e5a36;
+      --warn: #9a3412;
+      --border: rgba(36, 29, 21, 0.24);
+      --grid-line: rgba(36, 29, 21, 0.22);
+      --shadow: 0 8px 22px rgba(36, 29, 21, 0.12);
+      --highlight-line: rgba(133, 77, 14, 0.15);
+      --highlight-cell: rgba(124, 45, 18, 0.18);
+      --room-alpha: 0.15;
+    }
+
+    body[data-theme="forense"] {
+      --bg: #eef4f7;
+      --bg-pattern: radial-gradient(rgba(15, 118, 110, 0.08) 1px, transparent 0);
+      --surface: #ffffff;
+      --surface-2: #f1f7f9;
+      --ink: #0f2933;
+      --muted: #52717d;
+      --accent: #0d9488;
+      --accent-soft: rgba(13, 148, 136, 0.13);
+      --accent-2: #0284c7;
+      --gold: #d97706;
+      --ok: #059669;
+      --warn: #ea580c;
+      --border: rgba(15, 41, 51, 0.14);
+      --grid-line: rgba(15, 41, 51, 0.16);
+      --shadow: 0 10px 26px rgba(15, 41, 51, 0.08);
+      --highlight-line: rgba(13, 148, 136, 0.13);
+      --highlight-cell: rgba(2, 132, 199, 0.17);
+      --room-alpha: 0.15;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background-color: var(--bg);
+      background-image: var(--bg-pattern);
+      background-size: 18px 18px;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overscroll-behavior-y: none;
+    }
+
+    button, input {
+      font-family: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      min-height: 38px;
+      transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    button:active { transform: scale(0.97); }
+    button:focus-visible, [tabindex]:focus-visible {
+      outline: 3px solid var(--accent-2);
+      outline-offset: 2px;
+    }
+    button:disabled { opacity: 0.5; cursor: default; }
+
+    button.primary { background: var(--accent); color: #ffffff; border-color: transparent; }
+    button.secondary { background: var(--accent-2); color: #ffffff; border-color: transparent; }
+    button.danger { color: var(--accent); border-color: var(--accent); background: transparent; }
+    button.link {
+      background: transparent;
+      border: 0;
+      padding: 4px 0;
+      min-height: 0;
+      color: var(--accent-2);
+      text-decoration: underline;
+    }
+    .btn-block { width: 100%; }
+
+    .app-shell {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: max(12px, env(safe-area-inset-top)) 14px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    @media (min-width: 900px) {
+      .app-shell { max-width: 1220px; padding: 18px 26px 40px; }
+    }
+
+    header.topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+
+    .brand h1 { margin: 0; font-size: 1.15rem; line-height: 1.1; letter-spacing: -0.01em; }
+    .brand small { display: block; font-size: 0.75rem; color: var(--muted); }
+
+    .top-actions { display: flex; align-items: center; gap: 6px; }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      font-size: 1.05rem;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .icon-btn img { width: 100%; height: 100%; object-fit: cover; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .hidden { display: none !important; }
+
+    .section-label {
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin: 14px 0 6px;
+    }
+
+    /* Onboarding & Profile */
+    .onb-head { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+
+    .avatar-box {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      border: 2.5px solid var(--accent);
+      background: var(--surface-2);
+      display: grid;
+      place-items: center;
+      font-size: 2.1rem;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .avatar-box.lg { width: 96px; height: 96px; font-size: 2.7rem; }
+    .avatar-box img { width: 100%; height: 100%; object-fit: cover; }
+
+    .icon-picker {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+    }
+
+    .icon-choice {
+      height: 40px;
+      padding: 0;
+      font-size: 1.2rem;
+      display: grid;
+      place-items: center;
+    }
+
+    .icon-choice.selected {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    .field-label { font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px; }
+    .field-error { color: var(--accent); font-size: 0.78rem; min-height: 1.1em; margin-top: 4px; }
+
+    .input-text {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      font-size: 1rem;
+    }
+
+    .photo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Lobby Layout */
+    .lobby-grid { display: flex; flex-direction: column; gap: 14px; }
+
+    @media (min-width: 900px) {
+      .lobby-grid {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        align-items: start;
+        gap: 20px;
+      }
+    }
+
+    .profile-summary { display: flex; align-items: center; gap: 12px; }
+    .profile-meta h2 { margin: 0 0 3px; font-size: 1.1rem; word-break: break-word; }
+
+    .rank-pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--gold);
+      background: rgba(180, 123, 25, 0.14);
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 4px;
+    }
+
+    .progress-bar-wrap {
+      height: 8px;
+      background: var(--surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-2), var(--accent));
+      transition: width 0.25s ease;
+    }
+
+    .diff-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .diff-tab { text-align: center; padding: 9px 6px; border-radius: 10px; font-size: 0.85rem; line-height: 1.3; }
+    .diff-tab small { display: block; font-size: 0.72rem; opacity: 0.8; font-weight: 600; }
+    .diff-tab.active { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+    .filter-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-chip { font-size: 0.78rem; padding: 5px 10px; border-radius: 999px; min-height: 32px; }
+    .filter-chip.active { background: var(--accent-2); color: #fff; border-color: var(--accent-2); }
+
+    .cases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+    @media (min-width: 900px) {
+      .cases-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    }
+
+    .case-card {
+      text-align: left;
+      padding: 10px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 5px;
+      min-height: 82px;
+    }
+
+    .case-card.solved { border-color: var(--ok); background: rgba(35, 107, 67, 0.08); }
+    .case-card.in-progress { border-color: var(--warn); }
+
+    .case-num {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .case-title { font-size: 0.84rem; font-weight: 700; line-height: 1.25; }
+    .case-sub { font-size: 0.72rem; font-weight: 700; min-height: 1em; }
+    .case-sub.ok { color: var(--ok); }
+    .case-sub.prog { color: var(--warn); }
+
+    .empty-msg { grid-column: 1 / -1; color: var(--muted); font-size: 0.88rem; padding: 12px 0; text-align: center; }
+
+    /* Game View */
+    .game-layout { display: flex; flex-direction: column; gap: 12px; }
+
+    @media (min-width: 900px) {
+      .game-layout {
+        display: grid;
+        grid-template-columns: minmax(380px, 520px) 1fr;
+        align-items: start;
+        gap: 20px;
+      }
+    }
+
+    .board-stage { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+    .board-header-info {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .board-header-info strong { color: var(--ink); }
+
+    .murdoku-board {
+      display: grid;
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 1 / 1;
+      border: 3px solid var(--ink);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .cell {
+      position: relative;
+      border: 0;
+      border-radius: 0;
+      border-right: 1px solid var(--grid-line);
+      border-bottom: 1px solid var(--grid-line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      min-height: 0;
+      min-width: 0;
+      font-weight: 400;
+      transition: none;
+      overflow: hidden;
+    }
+
+    .cell:active { transform: none; }
+    .cell.wr { border-right: 3px solid var(--ink); }
+    .cell.wb { border-bottom: 3px solid var(--ink); }
+    .cell.lc { border-right: 0; }
+    .cell.lr { border-bottom: 0; }
+    .cell:focus-visible { outline: 3px solid var(--accent-2); outline-offset: -3px; z-index: 4; }
+
+    .cell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: transparent;
+    }
+
+    .cell.hl-line::after { background: var(--highlight-line); }
+    .cell.hl-target::after { background: var(--highlight-cell); }
+
+    .cell.conflict { box-shadow: inset 0 0 0 3px var(--warn); }
+    .cell.selected-person .cell-suspect { transform: scale(1.08); }
+    .cell.selected-person { box-shadow: inset 0 0 0 2px var(--accent-2); }
+    .cell.flash-wrong { box-shadow: inset 0 0 0 3px var(--accent); animation: shake 0.45s ease 2; }
+    .cell.flash-reveal { box-shadow: inset 0 0 0 3px var(--ok); animation: pulse 0.6s ease 2; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+
+    @keyframes pulse {
+      50% { filter: brightness(1.25); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cell.flash-wrong, .cell.flash-reveal { animation: none; }
+      * { transition: none !important; }
+    }
+
+    .cell-room {
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-size: clamp(0.5rem, 1.9vw, 0.64rem);
+      font-weight: 800;
+      opacity: 0.85;
+      white-space: nowrap;
+      z-index: 1;
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .cell-prop {
+      position: absolute;
+      bottom: 1px;
+      right: 2px;
+      font-size: clamp(0.62rem, 2.4vw, 0.8rem);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .cell-mark-x {
+      font-size: clamp(1rem, 5vw, 1.4rem);
+      font-weight: 800;
+      color: var(--accent);
+      opacity: 0.75;
+      line-height: 1;
+    }
+
+    .cell-suspect {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.05;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .cell-suspect .em { font-size: clamp(1.05rem, 5.2vw, 1.45rem); }
+    .cell-suspect .nm { font-size: clamp(0.5rem, 1.9vw, 0.64rem); font-weight: 800; margin-top: 1px; }
+
+    .room-legend { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+
+    .room-tag {
+      font-size: 0.74rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      background: var(--surface-2);
+    }
+
+    .room-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border); }
+
+    .people-bar { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+
+    .person-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      background: var(--surface-2);
+    }
+
+    .person-chip .key {
+      font-size: 0.66rem;
+      opacity: 0.75;
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      padding: 0 4px;
+    }
+
+    .person-chip.victim { border-style: dashed; }
+    .person-chip.placed:not(.active) { opacity: 0.6; }
+    .person-chip.active { background: var(--accent-2); color: #fff; border-color: var(--accent-2); }
+
+    .tool-row { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; align-items: center; }
+
+    .seg {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .seg button { border: 0; border-radius: 0; }
+    .seg button + button { border-left: 1px solid var(--border); }
+    .seg button.on { background: var(--accent); color: #fff; }
+
+    .rule-callout {
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    .clues-list {
+      margin: 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+
+    .clues-list li { cursor: pointer; line-height: 1.38; padding: 2px 4px; border-radius: 6px; }
+    .clues-list li.crossed { text-decoration: line-through; opacity: 0.5; }
+    .clues-list li.violated { color: var(--accent); font-weight: 700; background: var(--accent-soft); }
+
+    .feedback-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      border-left: 4px solid var(--accent-2);
+      font-size: 0.86rem;
+      line-height: 1.4;
+    }
+
+    .feedback-box.bad { border-left-color: var(--accent); }
+    .feedback-box.good { border-left-color: var(--ok); }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.56);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 440px;
+      max-height: 90vh;
+      overflow: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-card h2 { margin-top: 0; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+    .rules-list { padding-left: 20px; line-height: 1.5; font-size: 0.9rem; margin: 0; }
+    .rules-list li { margin-bottom: 4px; }
+
+    .accuse-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .accuse-grid button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px; }
+    .accuse-grid .em { font-size: 1.6rem; }
+
+    .camera-video {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 12px;
+      background: #000;
+    }
+
+    .camera-video.mirror { transform: scaleX(-1); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: var(--surface);
+      padding: 10px 14px;
+      border-radius: 10px;
+      z-index: 90;
+      font-size: 0.88rem;
+      max-width: 90vw;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .muted { color: var(--muted); }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body data-theme="noir">
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-logo" aria-hidden="true">M</span>
+        <div>
+          <h1>Murdoku</h1>
+          <small>Dossiê de Dedução Lógica</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="btnBackLobby" class="icon-btn hidden" title="Voltar aos casos" aria-label="Voltar aos casos">📂</button>
+        <button id="btnHelp" class="icon-btn" title="Como jogar" aria-label="Como jogar">❓</button>
+        <button id="btnSound" class="icon-btn" title="Som" aria-label="Som">🔊</button>
+        <button id="btnTheme" class="icon-btn" title="Mudar tema" aria-label="Mudar tema">🎨</button>
+        <button id="btnProfile" class="icon-btn" title="Perfil do detetive" aria-label="Perfil do detetive">🕵️</button>
+      </div>
+    </header>
+
+    <!-- ONBOARDING / PROFILE VIEW -->
+    <section id="viewOnboarding" class="card hidden" aria-labelledby="onbTitle">
+      <h2 id="onbTitle" style="margin-top:0">Credencial de Detetive</h2>
+      <p class="muted" style="font-size:0.88rem;margin-top:0">
+        Crie seu perfil para salvar progresso, tempos e patente nos 150 casos.
+        Os dados ficam só neste aparelho.
+      </p>
+      <div class="onb-head">
+        <div id="onbAvatarPreview" class="avatar-box lg" aria-label="Prévia do avatar">🕵️</div>
+        <div style="flex:1;min-width:0">
+          <label for="onbName" class="field-label">Codinome / Nome</label>
+          <input id="onbName" class="input-text" type="text" maxlength="24" autocomplete="nickname" placeholder="Ex: Inspetor Silva" />
+          <div id="onbError" class="field-error" role="alert"></div>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:4px">Foto</div>
+      <div class="photo-actions">
+        <button id="btnTakePhoto" type="button">📷 Tirar foto</button>
+        <button id="btnPickGallery" type="button">🖼️ Galeria</button>
+        <button id="btnRemovePhoto" type="button" class="danger hidden">🗑️ Remover foto</button>
+        <input id="inputCamera" type="file" accept="image/*" capture="user" class="hidden" />
+        <input id="inputGallery" type="file" accept="image/*" class="hidden" />
+      </div>
+
+      <div class="section-label">Ou escolha um ícone</div>
+      <div class="icon-picker" id="onbIconPicker"></div>
+
+      <div class="modal-actions">
+        <button id="btnResetData" type="button" class="danger hidden" style="margin-right:auto">Apagar dados</button>
+        <button id="btnCancelProfile" type="button" class="hidden">Cancelar</button>
+        <button id="btnSaveProfile" type="button" class="primary">Salvar credencial</button>
+      </div>
+    </section>
+
+    <!-- LOBBY VIEW -->
+    <section id="viewLobby" class="lobby-grid hidden">
+      <div class="card">
+        <div class="profile-summary">
+          <div id="lobbyAvatar" class="avatar-box">🕵️</div>
+          <div class="profile-meta" style="flex:1;min-width:0">
+            <div id="lobbyRank" class="rank-pill">Novato</div>
+            <h2 id="lobbyName">Detetive</h2>
+            <div id="lobbyStats" class="muted" style="font-size:0.82rem">0 / 150 casos resolvidos</div>
+            <div class="progress-bar-wrap" role="progressbar" aria-label="Progresso total">
+              <div id="lobbyProgressBar" class="progress-bar-fill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-tabs" id="diffTabs">
+          <button class="diff-tab active" data-diff="easy">🟢 Fácil<small>4×4 · <span data-count="easy">0/50</span></small></button>
+          <button class="diff-tab" data-diff="medium">🟡 Médio<small>5×5 · <span data-count="medium">0/50</span></small></button>
+          <button class="diff-tab" data-diff="hard">🔴 Difícil<small>6×6 · <span data-count="hard">0/50</span></small></button>
+        </div>
+
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+          <button id="btnContinueCase" class="primary btn-block">▶ Iniciar caso</button>
+          <button id="btnLobbyRules" class="link" type="button" style="align-self:center">Como jogar?</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <h3 id="diffSectionTitle" style="margin:0;font-size:1rem">Nível Fácil — 50 casos</h3>
+          <div class="filter-row">
+            <button class="filter-chip active" data-filter="all">Todos</button>
+            <button class="filter-chip" data-filter="pending">Pendentes</button>
+            <button class="filter-chip" data-filter="solved">Resolvidos</button>
+          </div>
+        </div>
+        <div id="casesGrid" class="cases-grid"></div>
+      </div>
+    </section>
+
+    <!-- GAME VIEW -->
+    <section id="viewGame" class="game-layout hidden">
+      <div class="card board-stage">
+        <div class="board-header-info">
+          <strong id="gameCaseBadge">CASO #01</strong>
+          <span id="gameTimer" aria-label="Tempo">⏱ 00:00</span>
+          <span id="gameHints">💡 0</span>
+          <span id="gamePlacedCount">0/4 no mapa</span>
+        </div>
+
+        <div id="murdokuBoard" class="murdoku-board" role="grid" aria-label="Mapa da mansão"></div>
+        <div id="roomLegend" class="room-legend" aria-label="Cômodos"></div>
+
+        <div class="tool-row">
+          <div class="seg" role="group" aria-label="Modo de toque">
+            <button id="btnModePlace" type="button" class="on" aria-pressed="true" title="Posicionar pessoa (P)">👤 Posicionar</button>
+            <button id="btnModeMark" type="button" aria-pressed="false" title="Marcar casa descartada (X)">✖ Marcar</button>
+          </div>
+          <button id="btnUndo" type="button" title="Desfazer (Z)">↩ Desfazer</button>
+          <button id="btnHint" type="button" title="Dica (H) — custa tempo">💡 Dica</button>
+          <button id="btnClearBoard" type="button" title="Limpar mapa">🧹</button>
+        </div>
+        <button id="btnSubmit" class="primary btn-block" type="button">⚖️ Concluir caso</button>
+      </div>
+
+      <div class="card">
+        <h2 id="gameCaseTitle" style="margin:0 0 4px;font-size:1.15rem"></h2>
+        <p id="gameCaseStory" class="muted" style="margin:0 0 10px;font-size:0.88rem;line-height:1.4"></p>
+        <div class="rule-callout">
+          <strong>Regras:</strong> uma pessoa por linha e por coluna. Todas as pistas são verdadeiras.
+          O assassino é o <b>único suspeito no mesmo cômodo que a vítima</b>.
+        </div>
+
+        <div class="section-label">Pessoas — selecione e toque no mapa (atalhos 1–6)</div>
+        <div id="peopleBar" class="people-bar"></div>
+
+        <div class="section-label">Pistas do dossiê (toque para riscar)</div>
+        <ol id="cluesList" class="clues-list"></ol>
+
+        <div id="feedbackBox" class="feedback-box" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- RULES MODAL -->
+  <div id="rulesModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <div class="modal-card">
+      <h2 id="rulesTitle">Como jogar</h2>
+      <ol class="rules-list">
+        <li>Coloque no mapa <b>todos os suspeitos e o corpo da vítima</b> (💀).</li>
+        <li>Cada <b>linha</b> e cada <b>coluna</b> tem exatamente <b>uma pessoa</b>.</li>
+        <li>Os cômodos são as áreas coloridas, separadas por bordas grossas.</li>
+        <li>Todas as pistas são verdadeiras. Use-as para deduzir onde cada um estava.</li>
+        <li>O <b>assassino</b> é o único suspeito que estava no <b>mesmo cômodo da vítima</b>.</li>
+        <li>Quando terminar, toque em <b>⚖️ Concluir caso</b> e acuse o culpado.</li>
+      </ol>
+      <div class="section-label">Controles</div>
+      <ul class="rules-list">
+        <li>Selecione uma pessoa e toque em uma casa. Toque de novo para retirar.</li>
+        <li>No modo <b>✖ Marcar</b>, risque casas descartadas.</li>
+        <li>💡 Dica: aponta um erro (+15s) ou revela uma posição (+30s).</li>
+        <li>Teclado: <b>1–6</b> pessoas, <b>X</b> alterna modo, <b>Z</b> desfaz, <b>H</b> dica, setas navegam no mapa.</li>
+        <li>Seu progresso é salvo automaticamente.</li>
+      </ul>
+      <div class="modal-actions">
+        <button id="btnRulesOk" class="primary" type="button">Entendi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCUSE MODAL -->
+  <div id="accuseModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="accuseTitle">
+    <div class="modal-card">
+      <h2 id="accuseTitle">Quem é o culpado?</h2>
+      <p class="muted" style="margin:0;font-size:0.88rem">O mapa está consistente com todas as pistas. Acuse o suspeito que estava no mesmo cômodo da vítima.</p>
+      <div id="accuseGrid" class="accuse-grid"></div>
+      <div id="accuseMsg" class="field-error" role="alert" style="margin-top:8px"></div>
+      <div class="modal-actions">
+        <button id="btnAccuseCancel" type="button">Voltar ao mapa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT MODAL -->
+  <div id="resultModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="modal-card">
+      <h2 id="resultTitle"></h2>
+      <p id="resultMessage" style="font-size:0.92rem;line-height:1.45"></p>
+      <div class="modal-actions">
+        <button id="btnResultLobby" type="button">Voltar ao dossiê</button>
+        <button id="btnResultNext" class="primary" type="button">Próximo caso →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM MODAL -->
+  <div id="confirmModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-card">
+      <h2 id="confirmTitle" style="font-size:1.1rem">Confirmar</h2>
+      <p id="confirmMessage" style="font-size:0.92rem;line-height:1.45"></p>
+      <div class="modal-actions">
+        <button id="btnConfirmCancel" type="button">Cancelar</button>
+        <button id="btnConfirmOk" class="primary" type="button">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMERA MODAL -->
+  <div id="cameraModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="cameraTitle">
+    <div class="modal-card">
+      <h2 id="cameraTitle" style="font-size:1.1rem">Tirar foto</h2>
+      <video id="cameraVideo" class="camera-video mirror" autoplay playsinline muted></video>
+      <div class="modal-actions">
+        <button id="btnCameraSwitch" type="button" class="hidden">🔄 Trocar câmera</button>
+        <button id="btnCameraCancel" type="button">Cancelar</button>
+        <button id="btnCameraShoot" class="primary" type="button">📸 Capturar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      // <generator>
+      const SUSPECT_POOL = [
+        { id: "clara", name: "Clara", emoji: "👩🏻", g: "f" },
+        { id: "victor", name: "Victor", emoji: "🧔🏽", g: "m" },
+        { id: "elena", name: "Elena", emoji: "👩🏼", g: "f" },
+        { id: "marcos", name: "Marcos", emoji: "👨🏻", g: "m" },
+        { id: "sofia", name: "Sofia", emoji: "👩🏽", g: "f" },
+        { id: "henrique", name: "Henrique", emoji: "👨🏾", g: "m" },
+        { id: "beatriz", name: "Beatriz", emoji: "👩🏾", g: "f" },
+        { id: "otavio", name: "Otávio", emoji: "👴🏻", g: "m" }
+      ];
+
+      const VICTIM_POOL = [
+        { name: "Barão Ferraz", g: "m" },
+        { name: "Condessa Vilela", g: "f" },
+        { name: "Dr. Antunes", g: "m" },
+        { name: "Madame Duprat", g: "f" },
+        { name: "Coronel Brandão", g: "m" },
+        { name: "Lady Moreira", g: "f" },
+        { name: "Juiz Bittencourt", g: "m" },
+        { name: "Dona Celeste", g: "f" }
+      ];
+
+      const ROOM_POOL = [
+        { name: "Biblioteca", prep: "na" },
+        { name: "Salão", prep: "no" },
+        { name: "Jardim", prep: "no" },
+        { name: "Adega", prep: "na" },
+        { name: "Cozinha", prep: "na" },
+        { name: "Escritório", prep: "no" },
+        { name: "Varanda", prep: "na" },
+        { name: "Cofre", prep: "no" },
+        { name: "Capela", prep: "na" },
+        { name: "Estufa", prep: "na" },
+        { name: "Sótão", prep: "no" },
+        { name: "Galeria", prep: "na" }
+      ];
+
+      const PROP_POOL = [
+        { e: "🕯️", n: "castiçal" },
+        { e: "🗝️", n: "chave" },
+        { e: "🍷", n: "taça" },
+        { e: "📜", n: "carta" },
+        { e: "🕰️", n: "relógio" },
+        { e: "💎", n: "joia" },
+        { e: "🎭", n: "máscara" },
+        { e: "🪴", n: "planta" }
+      ];
+
+      const EVENTS = [
+        "um jantar de gala", "uma noite de tempestade", "um leilão privado", "um baile de máscaras",
+        "a leitura de um testamento", "uma partida de bridge", "um sarau de piano", "a inauguração da nova ala"
+      ];
+
+      const CASE_TITLES = [
+        "O Relógio Parado", "A Taça de Cristal", "Chave na Névoa", "Sombra no Jardim",
+        "Carta Queimada", "O Piano Silencioso", "Cofre Entreaberto", "Pegadas na Cinza",
+        "O Cálice de Prata", "Janela Entreaberta", "Segredo do Arquivo", "Valsa da Meia-Noite",
+        "O Retrato Rasgado", "Eco no Corredor", "A Orquídea Negra", "Chuva sobre o Telhado",
+        "O Medalhão Perdido", "Vinho e Silêncio", "A Bússola Quebrada", "O Último Brinde",
+        "Névoa na Varanda", "O Livro Cifrado", "Fio de Seda Azul", "O Espelho Trincado",
+        "Luz da Madrugada", "O Segredo do Jardim", "Taça na Estante", "O Bilhete Dobrado",
+        "Sino da Torre", "O Cofre Oculto", "Cinzas da Lareira", "A Chave Mestra",
+        "Rastro na Areia", "O Cântico Antigo", "Vela Apagada", "O Quadro na Sala",
+        "Noite sem Lua", "O Relicário", "Sussurro no Salão", "A Carta Selada",
+        "O Jardim de Inverno", "Taça Esquecida", "O Código do Relógio", "Porta Trancada",
+        "O Segredo da Adega", "Névoa do Amanhecer", "O Anel de Ouro", "Som na Escadaria",
+        "A Última Testemunha", "O Veredito Final"
+      ];
+
+      const DIFFS = {
+        easy: { size: 4, seed: 1000, label: "Fácil" },
+        medium: { size: 5, seed: 5000, label: "Médio" },
+        hard: { size: 6, seed: 9000, label: "Difícil" }
+      };
+      const DIFF_KEYS = ["easy", "medium", "hard"];
+      const CASES_PER_DIFF = 50;
+      const TOTAL_CASES = CASES_PER_DIFF * DIFF_KEYS.length;
+
+      // Peso de cada tipo de pista por dificuldade (maior = aparece mais).
+      const CLUE_WEIGHTS = {
+        easy: { row: 3, col: 3, notRow: 1, notCol: 1, room: 3, notRoom: 1, prop: 1.5, edge: 1, above: 0.6, left: 0.6, sameRoom: 0.8, diffRoom: 0.6 },
+        medium: { row: 1.2, col: 1.2, notRow: 1, notCol: 1, room: 2.5, notRoom: 1.2, prop: 1.5, edge: 1, above: 1.5, left: 1.5, sameRoom: 1.2, diffRoom: 1 },
+        hard: { row: 0.3, col: 0.3, notRow: 1, notCol: 1, room: 1.5, notRoom: 1.5, prop: 1.2, edge: 1, above: 2, left: 2, sameRoom: 1.5, diffRoom: 1.2 }
+      };
+
+      function mulberry32(seed) {
+        let a = seed >>> 0;
+        return function () {
+          a |= 0;
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      function shuffle(arr, rng) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(rng() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      function range(n) {
+        return Array.from({ length: n }, (_, i) => i);
+      }
+
+      function neighbors(i, n) {
+        const r = Math.floor(i / n);
+        const c = i % n;
+        const out = [];
+        if (r > 0) out.push(i - n);
+        if (r < n - 1) out.push(i + n);
+        if (c > 0) out.push(i - 1);
+        if (c < n - 1) out.push(i + 1);
+        return out;
+      }
+
+      // Cômodos contíguos: crescimento a partir de sementes, favorecendo cômodos menores.
+      function genRooms(n, rng) {
+        const k = n;
+        for (let attempt = 0; attempt < 100; attempt++) {
+          const g = new Array(n * n).fill(-1);
+          const sizes = new Array(k).fill(1);
+          shuffle(range(n * n), rng).slice(0, k).forEach((cell, i) => { g[cell] = i; });
+          let left = n * n - k;
+          while (left > 0) {
+            let best = null;
+            let bestScore = Infinity;
+            for (let i = 0; i < n * n; i++) {
+              if (g[i] !== -1) continue;
+              for (const j of neighbors(i, n)) {
+                if (g[j] === -1) continue;
+                const score = sizes[g[j]] + rng() * 2.5;
+                if (score < bestScore) {
+                  bestScore = score;
+                  best = [i, g[j]];
+                }
+              }
+            }
+            g[best[0]] = best[1];
+            sizes[best[1]]++;
+            left--;
+          }
+          if (Math.min(...sizes) >= 2) return g;
+        }
+        return range(n * n).map((i) => Math.floor(i / n));
+      }
+
+      function roomAt(ctx, p) {
+        return ctx.roomOf[p.r * ctx.size + p.c];
+      }
+
+      // true / false, ou null quando falta posicionar alguém da pista.
+      function clueHolds(cl, pos, ctx) {
+        const n = ctx.size;
+        const a = pos[cl.a];
+        if (!a) return null;
+        switch (cl.t) {
+          case "row": return a.r === cl.v;
+          case "col": return a.c === cl.v;
+          case "notRow": return a.r !== cl.v;
+          case "notCol": return a.c !== cl.v;
+          case "room": return roomAt(ctx, a) === cl.v;
+          case "notRoom": return roomAt(ctx, a) !== cl.v;
+          case "prop": return ctx.props[a.r * n + a.c] === cl.v;
+          case "edge": return (a.r === 0 || a.c === 0 || a.r === n - 1 || a.c === n - 1) === cl.v;
+          default: break;
+        }
+        const b = pos[cl.b];
+        if (!b) return null;
+        switch (cl.t) {
+          case "above": return a.r < b.r;
+          case "left": return a.c < b.c;
+          case "sameRoom": return roomAt(ctx, a) === roomAt(ctx, b);
+          case "diffRoom": return roomAt(ctx, a) !== roomAt(ctx, b);
+          default: return null;
+        }
+      }
+
+      // Regra do jogo: exatamente um suspeito divide o cômodo com a vítima.
+      function suspectsWithVictim(pos, ctx) {
+        const vr = roomAt(ctx, pos[ctx.V]);
+        const out = [];
+        for (let i = 0; i < ctx.V; i++) {
+          if (pos[i] && roomAt(ctx, pos[i]) === vr) out.push(i);
+        }
+        return out;
+      }
+
+      function solve(ctx, clues, limit) {
+        const n = ctx.size;
+        const P = n;
+        const unary = range(P).map(() => []);
+        const binary = range(P).map(() => []);
+        for (const cl of clues) {
+          if (cl.b === undefined) unary[cl.a].push(cl);
+          else {
+            binary[cl.a].push(cl);
+            binary[cl.b].push(cl);
+          }
+        }
+        const domains = range(P).map((p) => {
+          const d = [];
+          const probe = [];
+          for (let r = 0; r < n; r++) {
+            for (let c = 0; c < n; c++) {
+              probe[p] = { r, c };
+              if (unary[p].every((cl) => clueHolds(cl, probe, ctx))) d.push({ r, c });
+            }
+          }
+          return d;
+        });
+        const order = range(P).sort((x, y) => domains[x].length - domains[y].length);
+        const pos = new Array(P).fill(null);
+        const usedR = new Array(n).fill(false);
+        const usedC = new Array(n).fill(false);
+        let count = 0;
+        let first = null;
+
+        (function rec(k) {
+          if (k === P) {
+            if (suspectsWithVictim(pos, ctx).length === 1) {
+              count++;
+              if (!first) first = pos.map((x) => ({ r: x.r, c: x.c }));
+            }
+            return;
+          }
+          const p = order[k];
+          for (const cell of domains[p]) {
+            if (usedR[cell.r] || usedC[cell.c]) continue;
+            pos[p] = cell;
+            let ok = true;
+            for (const cl of binary[p]) {
+              if (clueHolds(cl, pos, ctx) === false) {
+                ok = false;
+                break;
+              }
+            }
+            if (ok) {
+              usedR[cell.r] = usedC[cell.c] = true;
+              rec(k + 1);
+              usedR[cell.r] = usedC[cell.c] = false;
+            }
+            pos[p] = null;
+            if (count >= limit) return;
+          }
+        })(0);
+
+        return { count, first };
+      }
+
+      function buildCluePool(ctx, sol, rng, diff) {
+        const w = CLUE_WEIGHTS[diff];
+        const n = ctx.size;
+        const P = n;
+        const pool = [];
+        const others = (val) => shuffle(range(n).filter((x) => x !== val), rng).slice(0, 2);
+
+        for (let p = 0; p < P; p++) {
+          const s = sol[p];
+          const room = roomAt(ctx, s);
+          pool.push({ t: "row", a: p, v: s.r });
+          pool.push({ t: "col", a: p, v: s.c });
+          others(s.r).forEach((v) => pool.push({ t: "notRow", a: p, v }));
+          others(s.c).forEach((v) => pool.push({ t: "notCol", a: p, v }));
+          if (p !== ctx.killer) pool.push({ t: "room", a: p, v: room });
+          others(room).forEach((v) => pool.push({ t: "notRoom", a: p, v }));
+          const prop = ctx.props[s.r * n + s.c];
+          if (prop >= 0) pool.push({ t: "prop", a: p, v: prop });
+          pool.push({ t: "edge", a: p, v: s.r === 0 || s.c === 0 || s.r === n - 1 || s.c === n - 1 });
+        }
+
+        for (let a = 0; a < P; a++) {
+          for (let b = a + 1; b < P; b++) {
+            const A = sol[a];
+            const B = sol[b];
+            pool.push(A.r < B.r ? { t: "above", a, b } : { t: "above", a: b, b: a });
+            pool.push(A.c < B.c ? { t: "left", a, b } : { t: "left", a: b, b: a });
+            const same = roomAt(ctx, A) === roomAt(ctx, B);
+            const hasVictim = a === ctx.V || b === ctx.V;
+            if (!hasVictim) pool.push({ t: same ? "sameRoom" : "diffRoom", a, b });
+            else if (!same) pool.push({ t: "diffRoom", a: a === ctx.V ? b : a, b: ctx.V });
+          }
+        }
+        pool.forEach((cl) => { cl.w = w[cl.t]; });
+        return pool;
+      }
+
+      function pickClues(ctx, sol, rng, diff) {
+        const pool = buildCluePool(ctx, sol, rng, diff)
+          .map((cl) => ({ cl, k: Math.pow(rng(), 1 / cl.w) }))
+          .sort((x, y) => y.k - x.k)
+          .map((x) => x.cl);
+
+        const chosen = [];
+        for (const cl of pool) {
+          chosen.push(cl);
+          if (solve(ctx, chosen, 2).count === 1) break;
+        }
+
+        let cur = chosen.slice();
+        for (const cl of shuffle(chosen.slice(), rng)) {
+          const trial = cur.filter((x) => x !== cl);
+          if (solve(ctx, trial, 2).count === 1) cur = trial;
+        }
+
+        const typeOrder = ["row", "col", "room", "prop", "edge", "notRow", "notCol", "notRoom", "above", "left", "sameRoom", "diffRoom"];
+        cur.sort((x, y) => (x.b === undefined ? 0 : 1) - (y.b === undefined ? 0 : 1) || x.a - y.a || typeOrder.indexOf(x.t) - typeOrder.indexOf(y.t));
+        return cur.map((cl) => ({ t: cl.t, a: cl.a, b: cl.b, v: cl.v }));
+      }
+
+      function clueText(cl, ctx) {
+        const P = ctx.people;
+        const subj = (i) => (P[i].victim ? `O corpo de ${P[i].name}` : P[i].name);
+        const obj = (i) => (P[i].victim ? `o corpo de ${P[i].name}` : P[i].name);
+        const roomTxt = (v) => `${ctx.rooms[v].prep} ${ctx.rooms[v].name}`;
+        const a = subj(cl.a);
+        switch (cl.t) {
+          case "row": return `${a} estava na linha ${cl.v + 1}.`;
+          case "col": return `${a} estava na coluna ${cl.v + 1}.`;
+          case "notRow": return `${a} não estava na linha ${cl.v + 1}.`;
+          case "notCol": return `${a} não estava na coluna ${cl.v + 1}.`;
+          case "room": return `${a} estava ${roomTxt(cl.v)}.`;
+          case "notRoom": return `${a} não estava ${roomTxt(cl.v)}.`;
+          case "prop": return `${a} estava em uma casa com ${PROP_POOL[cl.v].e} (${PROP_POOL[cl.v].n}).`;
+          case "edge": return cl.v ? `${a} estava em uma casa da borda do mapa.` : `${a} não estava na borda do mapa.`;
+          case "above": return `${a} estava em uma linha acima de ${obj(cl.b)}.`;
+          case "left": return `${a} estava em uma coluna à esquerda de ${obj(cl.b)}.`;
+          case "sameRoom": return `${a} e ${obj(cl.b)} estavam no mesmo cômodo.`;
+          case "diffRoom": return `${a} não estava no mesmo cômodo que ${obj(cl.b)}.`;
+          default: return "";
+        }
+      }
+
+      function generateCase(diff, index) {
+        const cfg = DIFFS[diff];
+        const n = cfg.size;
+        const rng = mulberry32(cfg.seed + index * 7919);
+
+        let roomOf = null;
+        let sol = null;
+        let killer = -1;
+        while (!sol) {
+          roomOf = genRooms(n, rng);
+          for (let t = 0; t < 400 && !sol; t++) {
+            const rows = shuffle(range(n), rng);
+            const cols = shuffle(range(n), rng);
+            const pos = rows.map((r, i) => ({ r, c: cols[i] }));
+            const tmp = { size: n, roomOf, V: n - 1 };
+            const withV = suspectsWithVictim(pos, tmp);
+            if (withV.length === 1) {
+              sol = pos;
+              killer = withV[0];
+            }
+          }
+        }
+
+        const rooms = shuffle(ROOM_POOL.slice(), rng).slice(0, n);
+        const props = range(n * n).map(() => (rng() < 0.3 ? Math.floor(rng() * PROP_POOL.length) : -1));
+        const suspects = shuffle(SUSPECT_POOL.slice(), rng).slice(0, n - 1).map((s) => ({ ...s, victim: false }));
+        const victim = VICTIM_POOL[Math.floor(rng() * VICTIM_POOL.length)];
+        const people = suspects.concat([{ id: "victim", name: victim.name, emoji: "💀", g: victim.g, victim: true }]);
+        const event = EVENTS[Math.floor(rng() * EVENTS.length)];
+
+        const cs = {
+          id: `${diff}_${index + 1}`,
+          num: index + 1,
+          diff,
+          size: n,
+          title: CASE_TITLES[index % CASE_TITLES.length],
+          story: `${victim.name} foi encontrad${victim.g === "f" ? "a" : "o"} sem vida durante ${event}. ` +
+            `${n - 1} suspeitos circulavam pelos ${n} cômodos da mansão. Posicione todos — e o corpo — e descubra quem ficou a sós com a vítima.`,
+          people,
+          V: n - 1,
+          killer,
+          solution: sol,
+          roomOf,
+          rooms,
+          props,
+          clues: []
+        };
+        cs.clues = pickClues(cs, sol, rng, diff).map((cl) => ({ ...cl, text: clueText(cl, cs) }));
+        return cs;
+      }
+
+      const caseCache = new Map();
+      function getCase(diff, index) {
+        const key = `${diff}_${index}`;
+        if (!caseCache.has(key)) caseCache.set(key, generateCase(diff, index));
+        return caseCache.get(key);
+      }
+      // </generator>
+
+      // ---------- Estado persistente ----------
+      const STORAGE_KEY = "murdoku_v2";
+      const LEGACY_KEY = "murdoku_pwa_v1";
+      const THEMES = ["noir", "crime", "gazeta", "forense"];
+      const THEME_NAMES = { noir: "Noir", crime: "Cena do Crime", gazeta: "Gazeta", forense: "Forense" };
+      const AVATAR_ICONS = ["🕵️", "🕵️‍♀️", "👮", "👮‍♀️", "🔍", "🎩", "🕶️", "🦉", "🐺", "🦅", "🦊", "🐈‍⬛", "🧠", "🗝️", "⚖️", "🌹"];
+      const ROOM_HUES = [6, 205, 135, 275, 38, 325, 175, 95];
+      const HINT_COST_WRONG = 15;
+      const HINT_COST_REVEAL = 30;
+      const WRONG_ACCUSE_COST = 30;
+
+      function defaultState() {
+        return { profile: null, theme: "noir", sound: true, solved: {}, progress: {}, rulesSeen: false, lastDiff: "easy" };
+      }
+
+      function isObj(x) {
+        return x && typeof x === "object" && !Array.isArray(x);
+      }
+
+      function loadState() {
+        let s = null;
+        try {
+          s = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        } catch (e) { s = null; }
+        if (!isObj(s)) {
+          // Migra perfil/tema da versão antiga. Os casos mudaram, então o progresso antigo não vale.
+          try {
+            const old = JSON.parse(localStorage.getItem(LEGACY_KEY) || "null");
+            if (isObj(old)) s = { profile: old.profile || null, theme: old.theme, sound: old.sound };
+          } catch (e) { s = null; }
+        }
+        const st = Object.assign(defaultState(), isObj(s) ? s : {});
+        if (!THEMES.includes(st.theme)) st.theme = "noir";
+        if (!isObj(st.solved)) st.solved = {};
+        if (!isObj(st.progress)) st.progress = {};
+        if (!DIFF_KEYS.includes(st.lastDiff)) st.lastDiff = "easy";
+        if (st.profile) {
+          if (!isObj(st.profile) || typeof st.profile.name !== "string") st.profile = null;
+          else if (st.profile.photo && !/^data:image\//.test(st.profile.photo)) st.profile.photo = null;
+        }
+        st.sound = st.sound !== false;
+        return st;
+      }
+
+      let state = loadState();
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          return true;
+        } catch (e) {
+          toast("Não foi possível salvar: armazenamento cheio ou bloqueado.");
+          return false;
+        }
+      }
+
+      // ---------- Utilidades ----------
+      const $ = (id) => document.getElementById(id);
+      let currentView = null;
+      let returnView = null;
+      let currentDiff = state.lastDiff;
+      let currentFilter = "all";
+      let game = null;
+      let cellEls = [];
+      let hoverCell = null;
+      let openModalId = null;
+      let audioCtx = null;
+      let toastTimer = null;
+      let confirmCb = null;
+
+      function fmtTime(sec) {
+        sec = Math.max(0, Math.floor(sec || 0));
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        const mm = String(m).padStart(2, "0");
+        const ss = String(s).padStart(2, "0");
+        return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+      }
+
+      function pad2(n) {
+        return String(n).padStart(2, "0");
+      }
+
+      function toast(msg) {
+        const el = $("toast");
+        el.textContent = msg;
+        el.classList.remove("hidden");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.add("hidden"), 2600);
+      }
+
+      function setFeedback(msg, kind) {
+        const box = $("feedbackBox");
+        box.textContent = msg;
+        box.classList.toggle("bad", kind === "bad");
+        box.classList.toggle("good", kind === "good");
+      }
+
+      function playTone(type) {
+        if (!state.sound) return;
+        try {
+          if (!audioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (Ctx) audioCtx = new Ctx();
+          }
+          if (!audioCtx) return;
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          const now = audioCtx.currentTime;
+          let dur = 0.09;
+          if (type === "place") {
+            osc.frequency.setValueAtTime(520, now);
+            osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+            gain.gain.setValueAtTime(0.06, now);
+          } else if (type === "x") {
+            osc.frequency.setValueAtTime(280, now);
+            gain.gain.setValueAtTime(0.045, now);
+            dur = 0.06;
+          } else if (type === "error") {
+            osc.type = "square";
+            osc.frequency.setValueAtTime(180, now);
+            gain.gain.setValueAtTime(0.04, now);
+            dur = 0.16;
+          } else if (type === "win") {
+            osc.frequency.setValueAtTime(587.33, now);
+            osc.frequency.setValueAtTime(880, now + 0.11);
+            gain.gain.setValueAtTime(0.08, now);
+            dur = 0.3;
+          }
+          gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+          osc.start(now);
+          osc.stop(now + dur);
+          if (navigator.vibrate) navigator.vibrate(type === "win" ? [20, 40, 25] : type === "error" ? [30, 30, 30] : 10);
+        } catch (e) { /* som é opcional */ }
+      }
+
+      function applyTheme() {
+        document.body.setAttribute("data-theme", state.theme);
+        const btn = $("btnSound");
+        btn.textContent = state.sound ? "🔊" : "🔇";
+        btn.setAttribute("aria-pressed", String(state.sound));
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", getComputedStyle(document.body).getPropertyValue("--surface").trim() || "#1e1b18");
+      }
+
+      function renderAvatar(el, p) {
+        if (!el) return;
+        el.textContent = "";
+        if (p && p.photo) {
+          const img = document.createElement("img");
+          img.src = p.photo;
+          img.alt = "";
+          el.appendChild(img);
+        } else {
+          el.textContent = (p && p.icon) || "🕵️";
+        }
+      }
+
+      function computeRank(n) {
+        if (n >= 150) return "Lenda Forense";
+        if (n >= 100) return "Comissário";
+        if (n >= 60) return "Detetive Sênior";
+        if (n >= 25) return "Inspetor";
+        if (n >= 8) return "Investigador";
+        return "Novato";
+      }
+
+      function solvedCount(diff) {
+        return Object.keys(state.solved).filter((id) => !diff || id.startsWith(diff + "_")).length;
+      }
+
+      // ---------- Modais ----------
+      function openModal(id) {
+        if (openModalId && openModalId !== id) closeModal(openModalId);
+        $(id).classList.remove("hidden");
+        openModalId = id;
+        const focusable = $(id).querySelector("button.primary, button");
+        if (focusable) setTimeout(() => focusable.focus(), 30);
+      }
+
+      function closeModal(id) {
+        id = id || openModalId;
+        if (!id) return;
+        if (id === "cameraModal") stopCamera();
+        if (id === "rulesModal" && !state.rulesSeen) {
+          state.rulesSeen = true;
+          saveState();
+        }
+        $(id).classList.add("hidden");
+        if (openModalId === id) openModalId = null;
+      }
+
+      document.querySelectorAll(".modal-backdrop").forEach((bd) => {
+        bd.addEventListener("click", (e) => {
+          if (e.target === bd) closeModal(bd.id);
+        });
+      });
+
+      function confirmAction(title, message, okLabel, cb) {
+        $("confirmTitle").textContent = title;
+        $("confirmMessage").textContent = message;
+        $("btnConfirmOk").textContent = okLabel;
+        confirmCb = cb;
+        openModal("confirmModal");
+      }
+
+      $("btnConfirmOk").onclick = () => {
+        const cb = confirmCb;
+        confirmCb = null;
+        closeModal("confirmModal");
+        if (cb) cb();
+      };
+      $("btnConfirmCancel").onclick = () => closeModal("confirmModal");
+      $("btnRulesOk").onclick = () => closeModal("rulesModal");
+
+      // ---------- Views ----------
+      function showView(id) {
+        if (currentView && currentView !== id && currentView !== "viewOnboarding") returnView = currentView;
+        currentView = id;
+        ["viewOnboarding", "viewLobby", "viewGame"].forEach((v) => $(v).classList.toggle("hidden", v !== id));
+        $("btnBackLobby").classList.toggle("hidden", id !== "viewGame");
+        if (id !== "viewGame") setHover(null);
+      }
+
+      function renderHeaderAvatar() {
+        renderAvatar($("btnProfile"), state.profile);
+      }
+
+      // ---------- Perfil / cadastro ----------
+      let draft = { name: "", icon: AVATAR_ICONS[0], photo: null };
+
+      function openOnboarding(editing) {
+        draft = {
+          icon: (state.profile && state.profile.icon) || AVATAR_ICONS[0],
+          photo: (state.profile && state.profile.photo) || null
+        };
+        $("onbTitle").textContent = editing ? "Editar credencial" : "Credencial de Detetive";
+        $("onbName").value = (state.profile && state.profile.name) || "";
+        $("onbError").textContent = "";
+        $("btnCancelProfile").classList.toggle("hidden", !editing);
+        $("btnResetData").classList.toggle("hidden", !editing);
+        $("btnSaveProfile").textContent = editing ? "Salvar alterações" : "Criar credencial";
+        buildIconPicker();
+        refreshDraftAvatar();
+        showView("viewOnboarding");
+        if (window.matchMedia("(pointer: fine)").matches) setTimeout(() => $("onbName").focus(), 50);
+      }
+
+      function buildIconPicker() {
+        const picker = $("onbIconPicker");
+        picker.innerHTML = "";
+        AVATAR_ICONS.forEach((em) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "icon-choice";
+          btn.dataset.icon = em;
+          btn.textContent = em;
+          btn.setAttribute("aria-label", `Usar ícone ${em}`);
+          btn.onclick = () => {
+            draft.icon = em;
+            draft.photo = null;
+            refreshDraftAvatar();
+          };
+          picker.appendChild(btn);
+        });
+      }
+
+      function refreshDraftAvatar() {
+        renderAvatar($("onbAvatarPreview"), draft);
+        document.querySelectorAll("#onbIconPicker .icon-choice").forEach((btn) => {
+          const sel = !draft.photo && btn.dataset.icon === draft.icon;
+          btn.classList.toggle("selected", sel);
+          btn.setAttribute("aria-pressed", String(sel));
+        });
+        $("btnRemovePhoto").classList.toggle("hidden", !draft.photo);
+      }
+
+      function leaveOnboarding() {
+        if (returnView === "viewGame" && game) {
+          showView("viewGame");
+        } else {
+          renderLobby();
+        }
+      }
+
+      function saveProfile() {
+        const name = $("onbName").value.trim().replace(/\s+/g, " ");
+        if (name.length < 2) {
+          $("onbError").textContent = "Informe um codinome com pelo menos 2 caracteres.";
+          $("onbName").focus();
+          return;
+        }
+        const first = !state.profile;
+        state.profile = {
+          name,
+          icon: draft.icon,
+          photo: draft.photo,
+          createdAt: (state.profile && state.profile.createdAt) || Date.now()
+        };
+        if (!saveState() && draft.photo) {
+          // Sem espaço para a foto: salva sem ela.
+          state.profile.photo = null;
+          saveState();
+        }
+        renderHeaderAvatar();
+        if (first) {
+          renderLobby();
+          toast(`Bem-vindo(a) ao dossiê, ${name}!`);
+          if (!state.rulesSeen) openModal("rulesModal");
+        } else {
+          toast("Credencial atualizada.");
+          leaveOnboarding();
+        }
+      }
+
+      function loadImageFile(file) {
+        return new Promise((resolve, reject) => {
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(img);
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("decode"));
+          };
+          img.src = url;
+        });
+      }
+
+      function squareDataUrl(source, w, h, mirror) {
+        const SIZE = 160;
+        const canvas = document.createElement("canvas");
+        canvas.width = SIZE;
+        canvas.height = SIZE;
+        const ctx = canvas.getContext("2d");
+        const side = Math.min(w, h);
+        if (mirror) {
+          ctx.translate(SIZE, 0);
+          ctx.scale(-1, 1);
+        }
+        ctx.drawImage(source, (w - side) / 2, (h - side) / 2, side, side, 0, 0, SIZE, SIZE);
+        return canvas.toDataURL("image/jpeg", 0.82);
+      }
+
+      async function handlePhotoInput(input) {
+        const file = input.files && input.files[0];
+        input.value = "";
+        if (!file) return;
+        if (file.type && !file.type.startsWith("image/")) {
+          toast("Escolha um arquivo de imagem.");
+          return;
+        }
+        try {
+          const img = await loadImageFile(file);
+          draft.photo = squareDataUrl(img, img.naturalWidth, img.naturalHeight, false);
+          refreshDraftAvatar();
+        } catch (e) {
+          toast("Não foi possível ler essa imagem. Tente JPG ou PNG.");
+        }
+      }
+
+      // Câmera: no celular usa o app nativo; no computador abre a webcam na página.
+      let camStream = null;
+      let camFacing = "user";
+
+      function stopCamera() {
+        if (camStream) camStream.getTracks().forEach((t) => t.stop());
+        camStream = null;
+        $("cameraVideo").srcObject = null;
+      }
+
+      async function startCamera() {
+        stopCamera();
+        camStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: camFacing, width: { ideal: 720 }, height: { ideal: 720 } },
+          audio: false
+        });
+        const video = $("cameraVideo");
+        video.srcObject = camStream;
+        video.classList.toggle("mirror", camFacing === "user");
+        await video.play().catch(() => {});
+      }
+
+      async function openCamera() {
+        const coarse = window.matchMedia("(pointer: coarse)").matches;
+        const hasMedia = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
+        if (coarse || !hasMedia) {
+          $("inputCamera").click();
+          return;
+        }
+        try {
+          camFacing = "user";
+          await startCamera();
+          openModal("cameraModal");
+          try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            $("btnCameraSwitch").classList.toggle("hidden", devices.filter((d) => d.kind === "videoinput").length < 2);
+          } catch (e) { /* ignora */ }
+        } catch (e) {
+          stopCamera();
+          toast("Câmera indisponível ou bloqueada. Use a Galeria.");
+        }
+      }
+
+      $("btnCameraShoot").onclick = () => {
+        const video = $("cameraVideo");
+        if (!video.videoWidth) {
+          toast("A câmera ainda está iniciando…");
+          return;
+        }
+        draft.photo = squareDataUrl(video, video.videoWidth, video.videoHeight, camFacing === "user");
+        closeModal("cameraModal");
+        refreshDraftAvatar();
+      };
+      $("btnCameraCancel").onclick = () => closeModal("cameraModal");
+      $("btnCameraSwitch").onclick = async () => {
+        camFacing = camFacing === "user" ? "environment" : "user";
+        try {
+          await startCamera();
+        } catch (e) {
+          toast("Não foi possível trocar de câmera.");
+        }
+      };
+
+      $("btnTakePhoto").onclick = openCamera;
+      $("btnPickGallery").onclick = () => $("inputGallery").click();
+      $("inputCamera").onchange = (e) => handlePhotoInput(e.target);
+      $("inputGallery").onchange = (e) => handlePhotoInput(e.target);
+      $("btnRemovePhoto").onclick = () => {
+        draft.photo = null;
+        refreshDraftAvatar();
+      };
+      $("btnSaveProfile").onclick = saveProfile;
+      $("onbName").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") saveProfile();
+      });
+      $("onbName").addEventListener("input", () => { $("onbError").textContent = ""; });
+      $("btnCancelProfile").onclick = () => {
+        if (state.profile) leaveOnboarding();
+      };
+      $("btnResetData").onclick = () => {
+        confirmAction(
+          "Apagar dados?",
+          "Isso remove seu perfil, foto e todo o progresso salvo neste aparelho. Não dá para desfazer.",
+          "Apagar tudo",
+          () => {
+            try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignora */ }
+            state = defaultState();
+            game = null;
+            applyTheme();
+            renderHeaderAvatar();
+            openOnboarding(false);
+          }
+        );
+      };
+
+      // ---------- Lobby ----------
+      function renderLobby() {
+        const p = state.profile || { name: "Detetive" };
+        renderAvatar($("lobbyAvatar"), p);
+        $("lobbyName").textContent = p.name;
+
+        const total = solvedCount();
+        $("lobbyRank").textContent = computeRank(total);
+        $("lobbyStats").textContent = `${total} / ${TOTAL_CASES} casos resolvidos`;
+        $("lobbyProgressBar").style.width = `${Math.round((total / TOTAL_CASES) * 100)}%`;
+        $("lobbyProgressBar").parentElement.setAttribute("aria-valuenow", String(total));
+
+        document.querySelectorAll(".diff-tab").forEach((tab) => {
+          const on = tab.dataset.diff === currentDiff;
+          tab.classList.toggle("active", on);
+          tab.setAttribute("aria-pressed", String(on));
+        });
+        DIFF_KEYS.forEach((d) => {
+          document.querySelector(`[data-count="${d}"]`).textContent = `${solvedCount(d)}/${CASES_PER_DIFF}`;
+        });
+        $("diffSectionTitle").textContent = `Nível ${DIFFS[currentDiff].label} — ${CASES_PER_DIFF} casos`;
+
+        const grid = $("casesGrid");
+        grid.innerHTML = "";
+        let shown = 0;
+        for (let i = 0; i < CASES_PER_DIFF; i++) {
+          const id = `${currentDiff}_${i + 1}`;
+          const solved = state.solved[id];
+          const prog = state.progress[id];
+          if (currentFilter === "solved" && !solved) continue;
+          if (currentFilter === "pending" && solved) continue;
+          shown++;
+
+          const card = document.createElement("button");
+          card.type = "button";
+          card.className = "case-card" + (solved ? " solved" : prog ? " in-progress" : "");
+          const head = document.createElement("div");
+          head.className = "case-num";
+          head.innerHTML = `<span>#${pad2(i + 1)}</span><span>${DIFFS[currentDiff].size}×${DIFFS[currentDiff].size}</span>`;
+          const title = document.createElement("div");
+          title.className = "case-title";
+          title.textContent = CASE_TITLES[i % CASE_TITLES.length];
+          const sub = document.createElement("div");
+          sub.className = "case-sub";
+          if (solved) {
+            sub.classList.add("ok");
+            sub.textContent = `✓ ${fmtTime(solved.time)}${solved.hints ? ` · 💡${solved.hints}` : ""}`;
+          } else if (prog) {
+            sub.classList.add("prog");
+            sub.textContent = `⏸ Em andamento · ${fmtTime(prog.time)}`;
+          }
+          card.append(head, title, sub);
+          card.setAttribute("aria-label", `Caso ${i + 1}: ${title.textContent}. ${sub.textContent || "Não iniciado"}`);
+          card.onclick = () => startCase(currentDiff, i);
+          grid.appendChild(card);
+        }
+        if (!shown) {
+          const msg = document.createElement("div");
+          msg.className = "empty-msg";
+          msg.textContent = currentFilter === "solved" ? "Nenhum caso resolvido neste nível ainda." : "Todos os casos deste nível foram resolvidos! 🏆";
+          grid.appendChild(msg);
+        }
+
+        const target = continueTarget(currentDiff);
+        const btn = $("btnContinueCase");
+        if (target.kind === "resume") btn.textContent = `▶ Continuar caso #${pad2(target.index + 1)}`;
+        else if (target.kind === "next") btn.textContent = `▶ Iniciar caso #${pad2(target.index + 1)}`;
+        else btn.textContent = "🏆 Nível completo — rejogar #01";
+
+        showView("viewLobby");
+      }
+
+      function continueTarget(diff) {
+        let best = null;
+        for (let i = 0; i < CASES_PER_DIFF; i++) {
+          const prog = state.progress[`${diff}_${i + 1}`];
+          if (prog && (!best || (prog.updatedAt || 0) > best.at)) best = { index: i, at: prog.updatedAt || 0 };
+        }
+        if (best) return { kind: "resume", index: best.index };
+        for (let i = 0; i < CASES_PER_DIFF; i++) {
+          if (!state.solved[`${diff}_${i + 1}`]) return { kind: "next", index: i };
+        }
+        return { kind: "done", index: 0 };
+      }
+
+      // ---------- Jogo ----------
+      function validSaved(saved, n) {
+        return isObj(saved) &&
+          Array.isArray(saved.pos) && saved.pos.length === n &&
+          saved.pos.every((p) => p === null || (isObj(p) && p.r >= 0 && p.r < n && p.c >= 0 && p.c < n)) &&
+          Array.isArray(saved.marks) && saved.marks.length === n * n;
+      }
+
+      function startCase(diff, index) {
+        const cs = getCase(diff, index);
+        const n = cs.size;
+        const saved = state.progress[cs.id];
+        const ok = validSaved(saved, n);
+        game = {
+          cs,
+          pos: ok ? saved.pos.map((p) => (p ? { r: p.r, c: p.c } : null)) : new Array(n).fill(null),
+          marks: ok ? saved.marks.map(Boolean) : new Array(n * n).fill(false),
+          time: ok ? Number(saved.time) || 0 : 0,
+          hints: ok ? Number(saved.hints) || 0 : 0,
+          crossed: new Set(ok && Array.isArray(saved.crossed) ? saved.crossed : []),
+          violated: new Set(),
+          history: [],
+          selected: 0,
+          mode: "place",
+          finished: false
+        };
+        game.selected = firstUnplaced(0);
+        if (game.selected < 0) game.selected = 0;
+        currentDiff = diff;
+        state.lastDiff = diff;
+
+        $("gameCaseBadge").textContent = `CASO #${pad2(cs.num)} · ${n}×${n}`;
+        $("gameCaseTitle").textContent = cs.title;
+        $("gameCaseStory").textContent = cs.story;
+        setFeedback(ok ? "Investigação retomada de onde você parou." : "Comece pelas pistas mais diretas. Use ✖ Marcar para descartar casas.");
+
+        buildBoard();
+        renderPeople();
+        renderClues();
+        updateBoard();
+        updateTools();
+        updateTimer();
+        showView("viewGame");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function persist() {
+        if (!game || game.finished) return;
+        state.progress[game.cs.id] = {
+          pos: game.pos,
+          marks: game.marks,
+          time: game.time,
+          hints: game.hints,
+          crossed: Array.from(game.crossed),
+          updatedAt: Date.now()
+        };
+        saveState();
+      }
+
+      function personName(i) {
+        const p = game.cs.people[i];
+        return p.victim ? `O corpo de ${p.name}` : p.name;
+      }
+
+      function firstUnplaced(from) {
+        const n = game.pos.length;
+        for (let k = 0; k < n; k++) {
+          const i = (from + k) % n;
+          if (!game.pos[i]) return i;
+        }
+        return -1;
+      }
+
+      function roomColor(k, alpha) {
+        const h = ROOM_HUES[k % ROOM_HUES.length];
+        return `hsla(${h}, 60%, 52%, ${alpha || "var(--room-alpha)"})`;
+      }
+
+      function buildBoard() {
+        const cs = game.cs;
+        const n = cs.size;
+        const board = $("murdokuBoard");
+        board.innerHTML = "";
+        board.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+        board.style.gridTemplateRows = `repeat(${n}, 1fr)`;
+        cellEls = [];
+        hoverCell = null;
+
+        const anchorOf = {};
+        cs.roomOf.forEach((room, i) => {
+          if (anchorOf[room] === undefined) anchorOf[room] = i;
+        });
+
+        for (let r = 0; r < n; r++) {
+          for (let c = 0; c < n; c++) {
+            const i = r * n + c;
+            const room = cs.roomOf[i];
+            const cell = document.createElement("button");
+            cell.type = "button";
+            cell.className = "cell";
+            cell.style.background = roomColor(room);
+            if (c < n - 1) {
+              if (cs.roomOf[i + 1] !== room) cell.classList.add("wr");
+            } else cell.classList.add("lc");
+            if (r < n - 1) {
+              if (cs.roomOf[i + n] !== room) cell.classList.add("wb");
+            } else cell.classList.add("lr");
+
+            if (anchorOf[room] === i) {
+              const lbl = document.createElement("span");
+              lbl.className = "cell-room";
+              lbl.textContent = cs.rooms[room].name;
+              cell.appendChild(lbl);
+            }
+            if (cs.props[i] >= 0) {
+              const prop = document.createElement("span");
+              prop.className = "cell-prop";
+              prop.textContent = PROP_POOL[cs.props[i]].e;
+              cell.appendChild(prop);
+            }
+            const content = document.createElement("span");
+            content.className = "cell-content";
+            cell.appendChild(content);
+
+            cell.tabIndex = i === 0 ? 0 : -1;
+            cell.addEventListener("click", () => handleCell(r, c));
+            cell.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") setHover({ r, c }); });
+            cell.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") setHover(null); });
+            cell.addEventListener("keydown", (e) => onCellKey(e, r, c));
+            board.appendChild(cell);
+            cellEls.push(cell);
+          }
+        }
+
+        const legend = $("roomLegend");
+        legend.innerHTML = "";
+        cs.rooms.forEach((room, k) => {
+          const tag = document.createElement("span");
+          tag.className = "room-tag";
+          const sw = document.createElement("span");
+          sw.className = "room-swatch";
+          sw.style.background = roomColor(k, 0.55);
+          tag.append(sw, document.createTextNode(room.name));
+          legend.appendChild(tag);
+        });
+      }
+
+      function setHover(cell) {
+        hoverCell = cell;
+        if (!game) return;
+        const n = game.cs.size;
+        cellEls.forEach((el, i) => {
+          const r = Math.floor(i / n);
+          const c = i % n;
+          el.classList.toggle("hl-line", !!cell && (cell.r === r || cell.c === c));
+          el.classList.toggle("hl-target", !!cell && cell.r === r && cell.c === c);
+        });
+      }
+
+      function onCellKey(e, r, c) {
+        const n = game.cs.size;
+        let nr = r;
+        let nc = c;
+        if (e.key === "ArrowUp") nr--;
+        else if (e.key === "ArrowDown") nr++;
+        else if (e.key === "ArrowLeft") nc--;
+        else if (e.key === "ArrowRight") nc++;
+        else return;
+        e.preventDefault();
+        nr = Math.max(0, Math.min(n - 1, nr));
+        nc = Math.max(0, Math.min(n - 1, nc));
+        cellEls.forEach((el) => { el.tabIndex = -1; });
+        const el = cellEls[nr * n + nc];
+        el.tabIndex = 0;
+        el.focus();
+      }
+
+      function personAt(r, c) {
+        return game.pos.findIndex((p) => p && p.r === r && p.c === c);
+      }
+
+      function pushHistory() {
+        game.history.push({ pos: game.pos.map((p) => (p ? { ...p } : null)), marks: game.marks.slice() });
+        if (game.history.length > 200) game.history.shift();
+      }
+
+      function handleCell(r, c) {
+        if (!game || game.finished) return;
+        const n = game.cs.size;
+        const i = r * n + c;
+        const who = personAt(r, c);
+
+        if (game.mode === "mark") {
+          if (who >= 0) {
+            toast("Essa casa está ocupada. Use 👤 Posicionar para mover.");
+            return;
+          }
+          pushHistory();
+          game.marks[i] = !game.marks[i];
+          playTone("x");
+        } else {
+          const sel = game.selected;
+          pushHistory();
+          if (who === sel) {
+            game.pos[sel] = null;
+            playTone("x");
+          } else {
+            const wasPlaced = !!game.pos[sel];
+            if (who >= 0) {
+              game.pos[who] = null;
+              toast(`${game.cs.people[who].name} voltou para a lista.`);
+            }
+            game.pos[sel] = { r, c };
+            game.marks[i] = false;
+            playTone("place");
+            if (!wasPlaced) {
+              const next = firstUnplaced(sel + 1);
+              if (next >= 0) game.selected = next;
+            }
+          }
+        }
+        clearViolations();
+        renderPeople();
+        updateBoard();
+        persist();
+      }
+
+      function updateBoard() {
+        const cs = game.cs;
+        const n = cs.size;
+        const occ = new Array(n * n).fill(-1);
+        const rowCount = new Array(n).fill(0);
+        const colCount = new Array(n).fill(0);
+        let placed = 0;
+        game.pos.forEach((p, k) => {
+          if (!p) return;
+          occ[p.r * n + p.c] = k;
+          rowCount[p.r]++;
+          colCount[p.c]++;
+          placed++;
+        });
+
+        cellEls.forEach((cell, i) => {
+          const r = Math.floor(i / n);
+          const c = i % n;
+          const who = occ[i];
+          const content = cell.querySelector(".cell-content");
+          content.textContent = "";
+          let desc;
+          if (who >= 0) {
+            const p = cs.people[who];
+            const wrap = document.createElement("span");
+            wrap.className = "cell-suspect";
+            const em = document.createElement("span");
+            em.className = "em";
+            em.textContent = p.emoji;
+            const nm = document.createElement("span");
+            nm.className = "nm";
+            nm.textContent = p.victim ? "Vítima" : p.name;
+            wrap.append(em, nm);
+            content.appendChild(wrap);
+            desc = p.victim ? `corpo de ${p.name}` : p.name;
+          } else if (game.marks[i]) {
+            const x = document.createElement("span");
+            x.className = "cell-mark-x";
+            x.textContent = "✖";
+            content.appendChild(x);
+            desc = "marcada com X";
+          } else {
+            desc = "vazia";
+          }
+          cell.classList.toggle("conflict", who >= 0 && (rowCount[r] > 1 || colCount[c] > 1));
+          cell.classList.toggle("selected-person", who >= 0 && who === game.selected && game.mode === "place");
+          const prop = cs.props[i] >= 0 ? `, ${PROP_POOL[cs.props[i]].n}` : "";
+          cell.setAttribute("aria-label", `Linha ${r + 1}, coluna ${c + 1}, ${cs.rooms[cs.roomOf[i]].name}${prop}: ${desc}`);
+        });
+
+        $("gamePlacedCount").textContent = `${placed}/${n} no mapa`;
+        $("gameHints").textContent = `💡 ${game.hints}`;
+      }
+
+      function renderPeople() {
+        const bar = $("peopleBar");
+        bar.innerHTML = "";
+        game.cs.people.forEach((p, i) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          const active = game.selected === i && game.mode === "place";
+          btn.className = "person-chip" + (active ? " active" : "") + (game.pos[i] ? " placed" : "") + (p.victim ? " victim" : "");
+          btn.setAttribute("aria-pressed", String(active));
+          const em = document.createElement("span");
+          em.textContent = p.emoji;
+          const nm = document.createElement("span");
+          nm.textContent = p.victim ? `Vítima (${p.name})` : p.name;
+          const key = document.createElement("span");
+          key.className = "key";
+          key.textContent = String(i + 1);
+          btn.append(em, nm, key);
+          if (game.pos[i]) btn.append(document.createTextNode("✓"));
+          btn.onclick = () => selectPerson(i);
+          bar.appendChild(btn);
+        });
+      }
+
+      function selectPerson(i) {
+        if (!game || i < 0 || i >= game.cs.people.length) return;
+        game.selected = i;
+        game.mode = "place";
+        updateTools();
+        renderPeople();
+        updateBoard();
+      }
+
+      function setMode(mode) {
+        game.mode = mode;
+        updateTools();
+        renderPeople();
+        updateBoard();
+      }
+
+      function updateTools() {
+        const place = game.mode === "place";
+        $("btnModePlace").classList.toggle("on", place);
+        $("btnModeMark").classList.toggle("on", !place);
+        $("btnModePlace").setAttribute("aria-pressed", String(place));
+        $("btnModeMark").setAttribute("aria-pressed", String(!place));
+      }
+
+      function renderClues() {
+        const list = $("cluesList");
+        list.innerHTML = "";
+        game.cs.clues.forEach((cl, idx) => {
+          const li = document.createElement("li");
+          li.textContent = cl.text;
+          li.tabIndex = 0;
+          li.setAttribute("role", "button");
+          const crossed = game.crossed.has(idx);
+          li.classList.toggle("crossed", crossed);
+          li.classList.toggle("violated", game.violated.has(idx));
+          li.setAttribute("aria-pressed", String(crossed));
+          const toggle = () => {
+            if (game.crossed.has(idx)) game.crossed.delete(idx);
+            else game.crossed.add(idx);
+            li.classList.toggle("crossed", game.crossed.has(idx));
+            li.setAttribute("aria-pressed", String(game.crossed.has(idx)));
+            persist();
+          };
+          li.onclick = toggle;
+          li.onkeydown = (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggle();
+            }
+          };
+          list.appendChild(li);
+        });
+      }
+
+      function clearViolations() {
+        if (!game.violated.size) return;
+        game.violated.clear();
+        renderClues();
+      }
+
+      function updateTimer() {
+        if (game) $("gameTimer").textContent = `⏱ ${fmtTime(game.time)}`;
+      }
+
+      function flashCell(p, cls) {
+        const el = cellEls[p.r * game.cs.size + p.c];
+        if (!el) return;
+        el.classList.remove("flash-wrong", "flash-reveal");
+        void el.offsetWidth;
+        el.classList.add(cls);
+        setTimeout(() => el.classList.remove(cls), 1800);
+      }
+
+      function undo() {
+        if (!game || game.finished) return;
+        const prev = game.history.pop();
+        if (!prev) {
+          toast("Nada para desfazer.");
+          return;
+        }
+        game.pos = prev.pos;
+        game.marks = prev.marks;
+        clearViolations();
+        renderPeople();
+        updateBoard();
+        persist();
+      }
+
+      function giveHint() {
+        if (!game || game.finished) return;
+        const cs = game.cs;
+        const sol = cs.solution;
+        const wrong = game.pos.findIndex((p, i) => p && (p.r !== sol[i].r || p.c !== sol[i].c));
+        if (wrong >= 0) {
+          game.hints++;
+          game.time += HINT_COST_WRONG;
+          flashCell(game.pos[wrong], "flash-wrong");
+          setFeedback(`💡 ${personName(wrong)} está em uma posição incorreta. (+${HINT_COST_WRONG}s)`, "bad");
+        } else {
+          const missing = firstUnplaced(0);
+          if (missing < 0) {
+            setFeedback("Todas as posições estão corretas! Toque em ⚖️ Concluir caso.", "good");
+            return;
+          }
+          game.hints++;
+          game.time += HINT_COST_REVEAL;
+          const t = sol[missing];
+          flashCell(t, "flash-reveal");
+          setFeedback(`💡 ${personName(missing)} estava na linha ${t.r + 1}, coluna ${t.c + 1} (${cs.rooms[cs.roomOf[t.r * cs.size + t.c]].name}). (+${HINT_COST_REVEAL}s)`, "good");
+          selectPerson(missing);
+        }
+        playTone("place");
+        updateTimer();
+        updateBoard();
+        persist();
+      }
+
+      function submitCase() {
+        if (!game || game.finished) return;
+        const cs = game.cs;
+        const n = cs.size;
+        const missing = game.pos.filter((p) => !p).length;
+        if (missing) {
+          setFeedback(`Ainda falta posicionar ${missing} ${missing > 1 ? "pessoas" : "pessoa"} (inclusive o corpo da vítima).`, "bad");
+          playTone("error");
+          return;
+        }
+        const rows = new Set(game.pos.map((p) => p.r));
+        const cols = new Set(game.pos.map((p) => p.c));
+        if (rows.size < n || cols.size < n) {
+          setFeedback("Há duas pessoas na mesma linha ou coluna (casas destacadas em laranja).", "bad");
+          playTone("error");
+          return;
+        }
+        const violated = [];
+        cs.clues.forEach((cl, idx) => {
+          if (clueHolds(cl, game.pos, cs) === false) violated.push(idx);
+        });
+        if (violated.length) {
+          game.violated = new Set(violated);
+          renderClues();
+          setFeedback(`${violated.length} ${violated.length > 1 ? "pistas não batem" : "pista não bate"} com o mapa (destacadas em vermelho).`, "bad");
+          playTone("error");
+          return;
+        }
+        if (suspectsWithVictim(game.pos, cs).length !== 1) {
+          setFeedback("Pela regra, exatamente um suspeito deve estar no mesmo cômodo que a vítima. Revise o mapa.", "bad");
+          playTone("error");
+          return;
+        }
+        openAccuse();
+      }
+
+      function openAccuse() {
+        const grid = $("accuseGrid");
+        grid.innerHTML = "";
+        $("accuseMsg").textContent = "";
+        game.cs.people.forEach((p, i) => {
+          if (p.victim) return;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          const em = document.createElement("span");
+          em.className = "em";
+          em.textContent = p.emoji;
+          const nm = document.createElement("span");
+          nm.textContent = p.name;
+          btn.append(em, nm);
+          btn.onclick = () => accuse(i, btn);
+          grid.appendChild(btn);
+        });
+        openModal("accuseModal");
+      }
+
+      function accuse(i, btn) {
+        const cs = game.cs;
+        if (i !== cs.killer) {
+          game.time += WRONG_ACCUSE_COST;
+          updateTimer();
+          persist();
+          btn.disabled = true;
+          $("accuseMsg").textContent = `${cs.people[i].name} tem álibi: não estava no cômodo da vítima. (+${WRONG_ACCUSE_COST}s)`;
+          playTone("error");
+          return;
+        }
+        winCase();
+      }
+
+      function winCase() {
+        const cs = game.cs;
+        game.finished = true;
+        closeModal("accuseModal");
+        playTone("win");
+
+        const before = computeRank(solvedCount());
+        const prev = state.solved[cs.id];
+        const record = !prev || game.time < prev.time;
+        state.solved[cs.id] = {
+          time: prev ? Math.min(prev.time, game.time) : game.time,
+          hints: prev ? Math.min(prev.hints || 0, game.hints) : game.hints,
+          at: Date.now()
+        };
+        delete state.progress[cs.id];
+        saveState();
+        const after = computeRank(solvedCount());
+
+        const killer = cs.people[cs.killer];
+        const victim = cs.people[cs.V];
+        const room = cs.rooms[cs.roomOf[cs.solution[cs.V].r * cs.size + cs.solution[cs.V].c]];
+        $("resultTitle").textContent = `Caso #${pad2(cs.num)} resolvido!`;
+        let msg = `${killer.emoji} ${killer.name} é ${killer.g === "f" ? "a culpada" : "o culpado"}: ` +
+          `era o único suspeito ${room.prep} ${room.name} com ${victim.name}. ` +
+          `Tempo: ${fmtTime(game.time)}${game.hints ? ` · ${game.hints} ${game.hints > 1 ? "dicas" : "dica"}` : " · sem dicas"}.`;
+        if (prev && record) msg += " Novo recorde!";
+        if (after !== before) msg += ` Nova patente: ${after}!`;
+        $("resultMessage").textContent = msg;
+
+        const next = nextCaseIndex(cs.diff, cs.num - 1);
+        $("btnResultNext").classList.toggle("hidden", next < 0);
+        setFeedback("Caso encerrado. ✓", "good");
+        openModal("resultModal");
+      }
+
+      function nextCaseIndex(diff, fromIdx) {
+        for (let k = 1; k <= CASES_PER_DIFF; k++) {
+          const i = (fromIdx + k) % CASES_PER_DIFF;
+          if (!state.solved[`${diff}_${i + 1}`]) return i;
+        }
+        return -1;
+      }
+
+      // Cronômetro: só corre com o jogo visível, sem modal aberto.
+      setInterval(() => {
+        if (!game || game.finished || currentView !== "viewGame" || openModalId || document.hidden) return;
+        game.time++;
+        updateTimer();
+        if (game.time % 5 === 0) persist();
+      }, 1000);
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) persist();
+      });
+      window.addEventListener("pagehide", persist);
+
+      // ---------- Eventos ----------
+      $("btnModePlace").onclick = () => setMode("place");
+      $("btnModeMark").onclick = () => setMode("mark");
+      $("btnUndo").onclick = undo;
+      $("btnHint").onclick = giveHint;
+      $("btnSubmit").onclick = submitCase;
+      $("btnClearBoard").onclick = () => {
+        if (!game || game.finished) return;
+        confirmAction("Limpar o mapa?", "Remove todas as pessoas e marcações. Você pode usar ↩ Desfazer depois.", "Limpar", () => {
+          pushHistory();
+          const n = game.cs.size;
+          game.pos = new Array(n).fill(null);
+          game.marks = new Array(n * n).fill(false);
+          game.selected = 0;
+          clearViolations();
+          renderPeople();
+          updateBoard();
+          persist();
+        });
+      };
+
+      $("btnAccuseCancel").onclick = () => closeModal("accuseModal");
+      $("btnResultLobby").onclick = () => {
+        closeModal("resultModal");
+        renderLobby();
+      };
+      $("btnResultNext").onclick = () => {
+        closeModal("resultModal");
+        const next = game ? nextCaseIndex(game.cs.diff, game.cs.num - 1) : -1;
+        if (next < 0) renderLobby();
+        else startCase(game.cs.diff, next);
+      };
+
+      $("btnBackLobby").onclick = () => {
+        persist();
+        renderLobby();
+      };
+      $("btnHelp").onclick = () => openModal("rulesModal");
+      $("btnLobbyRules").onclick = () => openModal("rulesModal");
+      $("btnProfile").onclick = () => {
+        if (currentView === "viewOnboarding") return;
+        persist();
+        openOnboarding(Boolean(state.profile));
+      };
+      $("btnTheme").onclick = () => {
+        state.theme = THEMES[(THEMES.indexOf(state.theme) + 1) % THEMES.length];
+        saveState();
+        applyTheme();
+        toast(`Tema: ${THEME_NAMES[state.theme]}`);
+      };
+      $("btnSound").onclick = () => {
+        state.sound = !state.sound;
+        saveState();
+        applyTheme();
+      };
+
+      document.querySelectorAll(".diff-tab").forEach((tab) => {
+        tab.onclick = () => {
+          currentDiff = tab.dataset.diff;
+          state.lastDiff = currentDiff;
+          saveState();
+          renderLobby();
+        };
+      });
+
+      document.querySelectorAll(".filter-chip").forEach((chip) => {
+        chip.onclick = () => {
+          document.querySelectorAll(".filter-chip").forEach((c) => c.classList.toggle("active", c === chip));
+          currentFilter = chip.dataset.filter;
+          renderLobby();
+        };
+      });
+
+      $("btnContinueCase").onclick = () => startCase(currentDiff, continueTarget(currentDiff).index);
+
+      window.addEventListener("keydown", (e) => {
+        if (openModalId) {
+          if (e.key === "Escape") closeModal(openModalId);
+          return;
+        }
+        if (currentView !== "viewGame" || !game || game.finished) return;
+        if (e.target && e.target.matches && e.target.matches("input, textarea")) return;
+        const k = e.key.toLowerCase();
+        if (e.ctrlKey || e.metaKey) {
+          if (k === "z") {
+            e.preventDefault();
+            undo();
+          }
+          return;
+        }
+        if (e.altKey) return;
+        if (/^[1-9]$/.test(k)) selectPerson(Number(k) - 1);
+        else if (k === "x" || k === "m") setMode(game.mode === "mark" ? "place" : "mark");
+        else if (k === "p") setMode("place");
+        else if (k === "z" || k === "u") undo();
+        else if (k === "h") giveHint();
+        else if (k === "v") selectPerson(game.cs.V);
+      });
+
+      // ---------- PWA ----------
+      if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {});
+        });
+      }
+
+      // ---------- Início ----------
+      applyTheme();
+      renderHeaderAvatar();
+      if (!state.profile) openOnboarding(false);
+      else renderLobby();
+    })();
+  </script>
+</body>
+</html>
