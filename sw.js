@@ -1,6 +1,6 @@
 // Service worker do Murdoku.
 // Ao publicar uma nova versão, altere CACHE_VERSION para forçar a atualização do cache.
-const CACHE_VERSION = "murdoku-v2.0.1";
+const CACHE_VERSION = "murdoku-v2.0.2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -26,6 +26,8 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // Métricas (GoatCounter): sempre pela rede, nunca no cache.
+  if (/goatcounter\.com|gc\.zgo\.at/.test(event.request.url)) return;
   const req = event.request;
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
 
